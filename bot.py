@@ -1,3 +1,7 @@
+
++142
+-0
+
 import os
 import logging
 from dotenv import load_dotenv
@@ -80,6 +84,15 @@ async def admin(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         await update.message.reply_text("Нема доступу до адмін панелі.")
 
 
+async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Send a help message with available features."""
+    text = (
+        "Цей бот може показувати погоду та курси валют. "
+        "Надішліть будь-яке повідомлення і ви отримаєте відповідь від ChatGPT."
+    )
+    await update.message.reply_text(text)
+
+
 async def buttons(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle button presses."""
     query = update.callback_query
@@ -122,6 +135,7 @@ def main() -> None:
 
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("admin", admin))
+    application.add_handler(CommandHandler("help", help_command))
     application.add_handler(CallbackQueryHandler(buttons))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, respond))
 
