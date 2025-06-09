@@ -2,6 +2,7 @@ import os
 import logging
 from dotenv import load_dotenv
 import requests
+import openai
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     ApplicationBuilder,
@@ -15,6 +16,9 @@ from telegram.ext import (
 load_dotenv()
 TOKEN = os.getenv("TELEGRAM_TOKEN")
 ADMIN_ID = os.getenv("ADMIN_ID")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+if OPENAI_API_KEY:
+    openai.api_key = OPENAI_API_KEY
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -92,17 +96,21 @@ async def buttons(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 
 async def respond(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Reply to greetings and simple questions."""
-    text = update.message.text.lower()
-    if "привіт" in text or "hello" in text:
-        reply = "Привіт! Чим можу допомогти?"
-    elif text.endswith("?"):
-        reply = (
-            "На жаль, я ще не вмію відповідати на всі запитання, але "
-            "працюю над цим."
+    """Forward user message to ChatGPT and return the response."""
+    if not OPENAI_API_KEY:
+        await update.message.reply_text("OpenAI API key not configured.")
+        return
+
+    try:
+        completion = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": update.message.text}],
         )
-    else:
-        reply = "Не зовсім зрозумів. Спробуйте використати /start."
+        reply = completion.choices[0].message.content.strip()
+    except Exception as e:  # pylint: disable=broad-except
+        logger.error("OpenAI error: %s", e)
+        reply = "Не вдалося отримати відповідь від ChatGPT."
+
     await update.message.reply_text(reply)
 
 
