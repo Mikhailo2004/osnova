@@ -8,6 +8,8 @@ from telegram.ext import (
     CallbackQueryHandler,
     CommandHandler,
     ContextTypes,
+    MessageHandler,
+    filters,
 )
 
 load_dotenv()
@@ -89,6 +91,21 @@ async def buttons(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         await query.edit_message_text("Невідома дія")
 
 
+async def respond(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Reply to greetings and simple questions."""
+    text = update.message.text.lower()
+    if "привіт" in text or "hello" in text:
+        reply = "Привіт! Чим можу допомогти?"
+    elif text.endswith("?"):
+        reply = (
+            "На жаль, я ще не вмію відповідати на всі запитання, але "
+            "працюю над цим."
+        )
+    else:
+        reply = "Не зовсім зрозумів. Спробуйте використати /start."
+    await update.message.reply_text(reply)
+
+
 def main() -> None:
     """Run the bot."""
     if not TOKEN:
@@ -98,6 +115,7 @@ def main() -> None:
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("admin", admin))
     application.add_handler(CallbackQueryHandler(buttons))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, respond))
 
     application.run_polling()
 
