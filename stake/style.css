@@ -1,174 +1,110 @@
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap');
 
 :root {
-  --bg-color: radial-gradient(circle at top left, #0f0c29, #302b63, #24243e);
-  --text-color: #ffffff;
-  --accent-color: #0ff;
-}
-body.light {
-  --bg-color: #f0f0f0;
-  --text-color: #000000;
-  --accent-color: #0077ff;
+  --bg-dark: #0f0c29;
+  --bg-light: #ffffff;
+  --text-dark: #ffffff;
+  --text-light: #000000;
+  --accent: #00e6e6;
 }
 
 body {
   margin: 0;
-  padding: 0;
   font-family: 'Orbitron', sans-serif;
-  background: var(--bg-color);
-  color: var(--text-color);
-  overflow-x: hidden;
-  transition: background 0.5s, color 0.5s;
-}
-
-.crypto-bar {
-  display: flex;
-  gap: 10px;
-  position: sticky;
-  top: 0;
-  background: rgba(0,0,0,0.5);
-  backdrop-filter: blur(5px);
-  padding: 10px;
-  z-index: 10;
-}
-.crypto {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  border: 1px solid var(--accent-color);
-  border-radius: 6px;
-  padding: 4px 8px;
-  background: rgba(255,255,255,0.1);
-}
-.crypto .icon {
-  width: 20px;
-  height: 20px;
-}
-
-.clocks {
-  display: flex;
-  gap: 10px;
-  padding: 10px;
-  background: rgba(0,0,0,0.5);
-  backdrop-filter: blur(5px);
-  border-bottom: 1px solid rgba(255,255,255,0.2);
-}
-.clocks div {
-  border: 1px solid var(--accent-color);
-  padding: 4px 8px;
-  border-radius: 6px;
-  background: rgba(255,255,255,0.1);
-}
-
-.stake-button {
-  margin: 10px;
-  padding: 10px 20px;
-  border: 1px solid var(--accent-color);
-  background: var(--accent-color);
-  color: #000;
-  border-radius: 6px;
-  cursor: pointer;
-  box-shadow: 0 0 8px var(--accent-color);
-}
-
-.dropdown {
-  position: relative;
-  display: inline-block;
-  margin: 20px;
-}
-.dropbtn {
-  background: var(--accent-color);
-  color: #000;
-  padding: 8px 14px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-}
-.dropdown-content {
-  display: none;
-  position: absolute;
-  background: rgba(0,0,0,0.8);
-  color: var(--text-color);
-  min-width: 160px;
-  box-shadow: 0 8px 16px rgba(0,0,0,0.2);
-  padding: 6px 0;
-  z-index: 1;
-}
-.dropdown-content a {
-  color: var(--text-color);
-  padding: 6px 12px;
-  text-decoration: none;
-  display: block;
-}
-.dropdown-content a:hover {
-  background: rgba(255,255,255,0.1);
-}
-.dropdown:hover .dropdown-content {
-  display: block;
-}
-
-.loader {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: var(--bg-color);
-  color: var(--accent-color);
-  font-size: 24px;
-  z-index: 1000;
-}
-.loaded .loader {
-  display: none;
-}
-
-header {
-  padding: 80px 20px 40px;
+  background: var(--bg-dark);
+  color: var(--text-dark);
+  transition: background 0.3s, color 0.3s;
   text-align: center;
 }
-header h1 {
-  font-size: 3em;
-  color: var(--accent-color);
-  text-shadow: 0 0 20px var(--accent-color);
+
+body.light {
+  background: var(--bg-light);
+  color: var(--text-light);
 }
-header p {
-  max-width: 700px;
-  margin: 20px auto;
-  font-size: 1.2em;
+
+.theme-switch {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+}
+.theme-switch input {
+  display: none;
+}
+.theme-switch .slider {
+  width: 50px;
+  height: 24px;
+  background: #ccc;
+  border-radius: 24px;
+  position: relative;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+.theme-switch .slider:before {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  left: 2px;
+  top: 2px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.3s;
+}
+#theme-toggle:checked + .slider {
+  background: #4d4d4d;
+}
+#theme-toggle:checked + .slider:before {
+  transform: translateX(26px);
+}
+
+.hero {
+  padding: 80px 20px 40px;
+}
+.hero h1 {
+  font-size: 2.5em;
+  color: var(--accent);
+  margin-bottom: 20px;
 }
 .cta-button {
   display: inline-block;
-  margin: 10px;
   padding: 10px 30px;
-  font-size: 1.2em;
+  background: var(--accent);
   color: #000;
-  background: var(--accent-color);
-  border-radius: 8px;
   text-decoration: none;
-  box-shadow: 0 0 20px var(--accent-color);
-  transition: background 0.3s, box-shadow 0.3s;
-}
-.cta-button:hover {
-  background: #00e6e6;
-  box-shadow: 0 0 30px #00e6e6;
+  border-radius: 8px;
+  box-shadow: 0 0 15px var(--accent);
 }
 
-section {
-  padding: 60px 20px;
-  text-align: center;
+.rates {
+  padding: 40px 20px;
 }
-h2 {
-  color: var(--accent-color);
-  margin-bottom: 20px;
-  text-shadow: 0 0 10px var(--accent-color);
+.crypto-list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 20px;
+}
+.crypto {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+}
+body.light .crypto {
+  background: rgba(0, 0, 0, 0.05);
+}
+.crypto img {
+  width: 50px;
+  height: 50px;
+}
+.price {
+  margin-top: 5px;
+  font-size: 0.9em;
 }
 
 footer {
-  background: #111;
-  text-align: center;
   padding: 30px 20px;
   font-size: 0.9em;
   color: #666;
