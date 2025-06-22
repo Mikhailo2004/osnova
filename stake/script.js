@@ -36,12 +36,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function updateClocks() {
     const now = new Date();
-    const fmt = {hour: '2-digit', minute: '2-digit', second: '2-digit'};
-    document.getElementById('clock-sg').textContent = now.toLocaleTimeString('en-US', { ...fmt, timeZone: 'Asia/Singapore' });
-    document.getElementById('clock-ny').textContent = now.toLocaleTimeString('en-US', { ...fmt, timeZone: 'America/New_York' });
-    document.getElementById('clock-cn').textContent = now.toLocaleTimeString('en-US', { ...fmt, timeZone: 'Asia/Shanghai' });
-    document.getElementById('clock-af').textContent = now.toLocaleTimeString('en-US', { ...fmt, timeZone: 'Africa/Johannesburg' });
-    document.getElementById('clock-ru').textContent = now.toLocaleTimeString('en-US', { ...fmt, timeZone: 'Europe/Moscow' });
+    const fmt = { hour: '2-digit', minute: '2-digit', second: '2-digit' };
+    const zones = {
+      'clock-sg': 'Asia/Singapore',
+      'clock-ny': 'America/New_York',
+      'clock-cn': 'Asia/Shanghai',
+      'clock-af': 'Africa/Johannesburg',
+      'clock-ru': 'Europe/Moscow',
+      'time-kyiv': 'Europe/Kyiv',
+      'time-london': 'Europe/London',
+      'time-newyork': 'America/New_York'
+    };
+    for (const [id, zone] of Object.entries(zones)) {
+      const el = document.getElementById(id);
+      if (el) {
+        el.textContent = now.toLocaleTimeString('en-US', { ...fmt, timeZone: zone });
+      }
+    }
   }
 
   const stakeBtn = document.getElementById('stake-button');

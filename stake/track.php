@@ -11,6 +11,5 @@ try {
 } catch (Exception $e) {
 }
 $line = date('c')."\t{$event}\t{$ip}\t{$country}\t{$userAgent}\n";
-file_put_contents('visitors.log', $line, FILE_APPEND);
+file_put_contents(__DIR__ . '/visitors.log', $line, FILE_APPEND);
 echo 'ok';
-?>
