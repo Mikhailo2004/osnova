@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <title>Вхід в адмін-панель</title>
+</head>
+<body>
+  <h2>Вхід в адмін-панель</h2>
+  <% if (typeof error !== 'undefined') { %>
+    <p style="color:red"><%= error %></p>
+  <% } %>
+  <form method="POST" action="/login">
+    <input type="password" name="password" placeholder="Пароль" required />
+    <button type="submit">Увійти</button>
+  </form>
+</body>
+</html> 

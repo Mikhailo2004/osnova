@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Адмін панель - Telegram Bot</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <style>
+        .sidebar {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .sidebar .nav-link {
+            color: rgba(255,255,255,0.8);
+            border-radius: 10px;
+            margin: 5px 0;
+            transition: all 0.3s;
+        }
+        .sidebar .nav-link:hover, .sidebar .nav-link.active {
+            color: white;
+            background: rgba(255,255,255,0.1);
+            transform: translateX(5px);
+        }
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .stat-card.success {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        }
+        .stat-card.warning {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        .stat-card.info {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        .main-content {
+            background: #f8f9fa;
+            min-height: 100vh;
+        }
+        .navbar {
+            background: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .table {
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .btn {
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav class="col-md-3 col-lg-2 d-md-block sidebar collapse">
+                <div class="position-sticky pt-3">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-robot fa-3x text-white mb-2"></i>
+                        <h5 class="text-white">Telegram Bot</h5>
+                        <small class="text-white-50">Адмін панель</small>
+                    </div>
+                    
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link {{ 'active' if active_page == 'dashboard' }}" href="/">
+                                <i class="fas fa-tachometer-alt me-2"></i>
+                                Дашборд
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ 'active' if active_page == 'users' }}" href="/users">
+                                <i class="fas fa-users me-2"></i>
+                                Користувачі
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ 'active' if active_page == 'plans' }}" href="/plans">
+                                <i class="fas fa-tasks me-2"></i>
+                                Плани
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ 'active' if active_page == 'reminders' }}" href="/reminders">
+                                <i class="fas fa-bell me-2"></i>
+                                Нагадування
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ 'active' if active_page == 'broadcast' }}" href="/broadcast">
+                                <i class="fas fa-broadcast-tower me-2"></i>
+                                Розсилка
+                            </a>
+                        </li>
+                    </ul>
+                    
+                    <hr class="text-white-50">
+                    
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link" href="/logout">
+                                <i class="fas fa-sign-out-alt me-2"></i>
+                                Вийти
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- Main content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 main-content">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">
+                        <i class="fas fa-tachometer-alt me-2"></i>
+                        Дашборд
+                    </h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <div class="btn-group me-2">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="refreshStats()">
+                                <i class="fas fa-sync-alt"></i> Оновити
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bot Status -->
+                {% if bot_info %}
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="row align-items-center">
+                                    <div class="col-md-8">
+                                        <h5 class="card-title">
+                                            <i class="fas fa-robot me-2"></i>
+                                            Статус бота
+                                        </h5>
+                                        <p class="card-text">
+                                            <strong>Назва:</strong> {{ bot_info.name }}<br>
+                                            <strong>Username:</strong> @{{ bot_info.username }}<br>
+                                            <strong>ID:</strong> {{ bot_info.id }}<br>
+                                            <strong>Статус:</strong> 
+                                            <span class="badge bg-success">{{ bot_info.status }}</span>
+                                        </p>
+                                    </div>
+                                    <div class="col-md-4 text-center">
+                                        <i class="fas fa-robot fa-5x text-primary"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Statistics Cards -->
+                <div class="row mb-4">
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="card stat-card h-100">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-white-50 text-uppercase mb-1">
+                                            Користувачі
+                                        </div>
+                                        <div class="h5 mb-0 font-weight-bold text-white" id="total-users">
+                                            {{ stats.total_users if stats else 0 }}
+                                        </div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-users fa-2x text-white-50"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="card stat-card success h-100">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-white-50 text-uppercase mb-1">
+                                            Плани
+                                        </div>
+                                        <div class="h5 mb-0 font-weight-bold text-white" id="total-plans">
+                                            {{ stats.total_plans if stats else 0 }}
+                                        </div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-tasks fa-2x text-white-50"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="card stat-card warning h-100">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-white-50 text-uppercase mb-1">
+                                            Виконано
+                                        </div>
+                                        <div class="h5 mb-0 font-weight-bold text-white" id="completion-rate">
+                                            {{ stats.completion_rate if stats else 0 }}%
+                                        </div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-check-circle fa-2x text-white-50"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="card stat-card info h-100">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-white-50 text-uppercase mb-1">
+                                            Нагадування
+                                        </div>
+                                        <div class="h5 mb-0 font-weight-bold text-white" id="total-reminders">
+                                            {{ stats.total_reminders if stats else 0 }}
+                                        </div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-bell fa-2x text-white-50"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Row -->
+                <div class="row mb-4">
+                    <div class="col-xl-8 col-lg-7">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="m-0 font-weight-bold text-primary">
+                                    <i class="fas fa-chart-line me-2"></i>
+                                    Активність користувачів
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="activityChart" width="400" height="200"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-xl-4 col-lg-5">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="m-0 font-weight-bold text-primary">
+                                    <i class="fas fa-chart-pie me-2"></i>
+                                    Топ користувачів
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="list-group list-group-flush" id="top-users">
+                                    {% if stats and stats.top_users %}
+                                        {% for user in stats.top_users[:5] %}
+                                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <strong>{{ user.first_name or user.username or 'Невідомий' }}</strong>
+                                                <br>
+                                                <small class="text-muted">ID: {{ user.id }}</small>
+                                            </div>
+                                            <span class="badge bg-primary rounded-pill">{{ user.plans_count }}</span>
+                                        </div>
+                                        {% endfor %}
+                                    {% else %}
+                                        <p class="text-muted">Немає даних</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="m-0 font-weight-bold text-primary">
+                                    <i class="fas fa-bolt me-2"></i>
+                                    Швидкі дії
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-3 mb-3">
+                                        <a href="/users" class="btn btn-outline-primary w-100">
+                                            <i class="fas fa-users me-2"></i>
+                                            Управління користувачами
+                                        </a>
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <a href="/broadcast" class="btn btn-outline-success w-100">
+                                            <i class="fas fa-broadcast-tower me-2"></i>
+                                            Відправити розсилку
+                                        </a>
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <a href="/plans" class="btn btn-outline-info w-100">
+                                            <i class="fas fa-tasks me-2"></i>
+                                            Переглянути плани
+                                        </a>
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <a href="/reminders" class="btn btn-outline-warning w-100">
+                                            <i class="fas fa-bell me-2"></i>
+                                            Нагадування
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // WebSocket підключення
+        const socket = io();
+        
+        socket.on('connect', function() {
+            console.log('Connected to admin panel');
+            socket.emit('request_stats');
+        });
+        
+        socket.on('stats_update', function(data) {
+            updateStats(data);
+        });
+        
+        // Оновлення статистики
+        function updateStats(stats) {
+            document.getElementById('total-users').textContent = stats.total_users || 0;
+            document.getElementById('total-plans').textContent = stats.total_plans || 0;
+            document.getElementById('completion-rate').textContent = (stats.completion_rate || 0) + '%';
+            document.getElementById('total-reminders').textContent = stats.total_reminders || 0;
+        }
+        
+        // Функція оновлення статистики
+        function refreshStats() {
+            fetch('/api/stats')
+                .then(response => response.json())
+                .then(data => {
+                    updateStats(data);
+                })
+                .catch(error => {
+                    console.error('Error fetching stats:', error);
+                });
+        }
+        
+        // Графік активності
+        const ctx = document.getElementById('activityChart').getContext('2d');
+        const activityChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Нд'],
+                datasets: [{
+                    label: 'Активні користувачі',
+                    data: [12, 19, 3, 5, 2, 3, 7],
+                    borderColor: 'rgb(75, 192, 192)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+        
+        // Автооновлення кожні 30 секунд
+        setInterval(refreshStats, 30000);
+    </script>
+</body>
+</html> 
