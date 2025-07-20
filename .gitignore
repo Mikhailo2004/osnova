@@ -5,7 +5,7 @@
 # Дані бота
 data/
 *.xlsx
-*.json
+# *.json — видалено, щоб не ігнорувати package.json та package-lock.json
 
 # Python
 __pycache__/
@@ -58,3 +58,4 @@ Thumbs.db
 logs/ 
 node_modules/
 .env 
+# Не ігнорувати package.json та package-lock.json 
