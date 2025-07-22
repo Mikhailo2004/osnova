@@ -26,6 +26,9 @@ const currencyCache = {
   cacheTimeout: 2 * 60 * 60 * 1000 // 2 години
 };
 
+// Додаємо підтримку адаптивного інтервалу оновлення валют
+const CURRENCY_UPDATE_INTERVAL_MINUTES = parseInt(process.env.CURRENCY_UPDATE_INTERVAL_MINUTES, 10) || 30;
+
 // Оптимізована функція відстеження повідомлень
 function trackMessage(userId, messageId, type = 'bot') {
   if (!messageTracker.has(userId)) {
@@ -386,6 +389,19 @@ class CurrencyConverter {
     
     return message;
   }
+
+  async startAutoUpdate() {
+    // Оновлення при старті
+    await this.updateExchangeRates();
+    // Автоматичне оновлення з інтервалом
+    setInterval(async () => {
+      try {
+        await this.updateExchangeRates();
+      } catch (error) {
+        console.error('❌ Помилка автооновлення курсів:', error);
+      }
+    }, CURRENCY_UPDATE_INTERVAL_MINUTES * 60 * 1000);
+  }
 }
 
 // Клас для роботи з базою даних
@@ -485,12 +501,9 @@ class DatabaseManager {
       plan_id INTEGER,
       reminder_date TEXT NOT NULL,
       reminder_time TEXT NOT NULL,
-      message TEXT NOT NULL,
-      sent INTEGER DEFAULT 0,
-      sent_at DATETIME,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
-      FOREIGN KEY (plan_id) REFERENCES tomorrow_plans (id) ON DELETE CASCADE
+      message TEXT,
+      repeat_type TEXT DEFAULT 'none',
+      sent INTEGER DEFAULT 0
     )`);
 
     // Створюємо індекси для швидкості
@@ -928,12 +941,11 @@ class DatabaseManager {
   }
 
   // Створення нагадування з конкретною датою та часом
-  async createCustomReminder(userId, planId, reminderDate, reminderTime, message) {
+  async createCustomReminder(userId, planId, reminderDate, reminderTime, message, repeatType = 'none') {
     return new Promise((resolve, reject) => {
       this.db.run(
-        `INSERT INTO reminders (user_id, plan_id, reminder_date, reminder_time, message) 
-         VALUES (?, ?, ?, ?, ?)`,
-        [userId, planId, reminderDate, reminderTime, message],
+        `INSERT INTO reminders (user_id, plan_id, reminder_date, reminder_time, message, repeat_type) VALUES (?, ?, ?, ?, ?, ?)`,
+        [userId, planId, reminderDate, reminderTime, message, repeatType],
         function(err) {
           if (err) reject(err);
           else resolve(this.lastID);
@@ -1033,6 +1045,7 @@ const dbManager = new DatabaseManager(db);
 
 // Створюємо екземпляр конвертера валют
 const currencyConverter = new CurrencyConverter();
+currencyConverter.startAutoUpdate().catch(console.error);
 
 // Система нагадувань
 class ReminderSystem {
@@ -1114,12 +1127,57 @@ class ReminderSystem {
         await this.dbManager.markReminderSent(reminder.id);
         
         console.log(`✅ Нагадування відправлено користувачу ${reminder.user_id}`);
+        // Якщо повторюване нагадування — створюємо нове
+        if (reminder.repeat_type && reminder.repeat_type !== 'none') {
+          const nextDate = this.getNextReminderDate(reminder.reminder_date, reminder.repeat_type);
+          if (nextDate) {
+            await this.dbManager.createCustomReminder(
+              reminder.user_id,
+              reminder.plan_id,
+              nextDate,
+              reminder.reminder_time,
+              reminder.message,
+              reminder.repeat_type
+            );
+          }
+        }
       } else {
         console.log(`⏳ Нагадування ${reminder.id} ще не настав час`);
       }
     } catch (error) {
       console.error(`❌ Помилка при відправці нагадування користувачу ${reminder.user_id}:`, error);
     }
+  }
+
+  startAutoCheck() {
+    // Перевірка при старті
+    this.checkAndSendReminders().catch(console.error);
+    // Автоматична перевірка з інтервалом
+    setInterval(async () => {
+      try {
+        await this.checkAndSendReminders();
+      } catch (error) {
+        console.error('❌ Помилка авто-перевірки нагадувань:', error);
+      }
+    }, REMINDER_CHECK_INTERVAL_SECONDS * 1000);
+  }
+
+  getNextReminderDate(currentDate, repeatType) {
+    const date = new Date(currentDate);
+    switch (repeatType) {
+      case 'daily':
+        date.setDate(date.getDate() + 1);
+        break;
+      case 'weekly':
+        date.setDate(date.getDate() + 7);
+        break;
+      case 'monthly':
+        date.setMonth(date.getMonth() + 1);
+        break;
+      default:
+        return null;
+    }
+    return date.toISOString().slice(0, 10);
   }
 }
 
@@ -2768,3 +2826,17 @@ async function handleRatesAmountInput(ctx) {
     await ctx.reply('❌ Помилка при обробці суми.');
   }
 }
+
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err);
+  // Не завершуємо процес!
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  // Не завершуємо процес!
+});
+
+const REMINDER_CHECK_INTERVAL_SECONDS = parseInt(process.env.REMINDER_CHECK_INTERVAL_SECONDS, 10) || 60;
+
+reminderSystem.startAutoCheck();

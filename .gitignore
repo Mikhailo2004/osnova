@@ -4,6 +4,7 @@
 
 # Дані бота
 data/
+!data/.gitkeep
 *.xlsx
 # *.json — видалено, щоб не ігнорувати package.json та package-lock.json
 
