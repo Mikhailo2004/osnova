@@ -2840,3 +2840,9 @@ process.on('unhandledRejection', (reason, promise) => {
 const REMINDER_CHECK_INTERVAL_SECONDS = parseInt(process.env.REMINDER_CHECK_INTERVAL_SECONDS, 10) || 60;
 
 reminderSystem.startAutoCheck();
+
+setInterval(() => {
+  axios.get('https://ВАШ-РЕНДЕР-URL/') // ← ВСТАВТЕ СЮДИ СВІЙ URL Render
+    .then(() => console.log('Pinged Render site'))
+    .catch(err => console.error('Ping error:', err.message));
+}, 5 * 60 * 1000); // кожні 5 хвилин
