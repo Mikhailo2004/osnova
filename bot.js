@@ -3,6 +3,7 @@ const { Telegraf, Markup } = require('telegraf');
 const sqlite3 = require('sqlite3').verbose();
 const axios = require('axios');
 const cron = require('node-cron');
+const fs = require('fs');
 
 // Перевірка наявності токена
 if (!process.env.TELEGRAM_BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN === 'your-telegram-bot-token-here') {
@@ -2846,3 +2847,13 @@ setInterval(() => {
     .then(() => console.log('Pinged Render site'))
     .catch(err => console.error('Ping error:', err.message));
 }, 5 * 60 * 1000); // кожні 5 хвилин
+
+setInterval(() => {
+  fs.readFile(__filename, 'utf8', (err, data) => {
+    if (err) {
+      console.error('Watchdog read error:', err);
+    } else {
+      console.log('Watchdog: code read successfully');
+    }
+  });
+}, 2 * 60 * 1000); // кожні 2 хвилини
